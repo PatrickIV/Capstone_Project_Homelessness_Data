@@ -7,17 +7,15 @@ Evaluating Areas on their homelessness support based off multiple factors:
     - How effective is the Transitional Housing
 */
 -- Looking at unsheltered vs sheltered homeless people
-Select 
-	CoC_Name as Location,
-    Count_Year as Year,
-    Overall_Homeless as Total,
-    Unsheltered_Homeless as Unsheltered,
-    (Unsheltered_Homeless/Overall_Homeless)*100 as Percentage
-From 
-	homelessness.homeless_data
-Where
-	Count_Year = 2014
-order by 5 DESC
+SELECT 
+    CoC_Name AS Location,
+    Count_Year AS Year,
+    Overall_Homeless AS Total,
+    Unsheltered_Homeless AS Unsheltered,
+    (Unsheltered_Homeless / Overall_Homeless) * 100 AS Percentage
+FROM
+    homelessness.homeless_data
+ORDER BY 5 DESC
 -- Looking at Total Sheltered Homeless vs Homeless in emergency shelters
 Select 
 	CoC_Name as Location,
@@ -27,8 +25,6 @@ Select
     ROUND((Sheltered_ES_Homeless/Overall_Homeless)*100, 2) as Percentage
 From 
 	homelessness.homeless_data
-Where
-	Count_Year = 2014
 order by 5 DESC
 -- Looking at Total Sheltered Homeless vs Homeless in Transitional Housing
 Select 
@@ -39,8 +35,6 @@ Select
     ROUND((Sheltered_TH_Homeless/Overall_Homeless)*100, 2) as Percentage
 From 
 	homelessness.homeless_data
-Where
-	Count_Year = 2014
 order by 5 DESC
 -- Looking at Total Sheltered Homeless vs Homeless in Safe Haven Housing
 Select 
@@ -51,8 +45,6 @@ Select
     ROUND((Sheltered_SH_Homeless/Overall_Homeless)*100, 2) as Percentage
 From 
 	homelessness.homeless_data
-Where
-	Count_Year = 2014
 order by 5 DESC
 -- Looking at effectiveness of the Transitional Housing
 with Overtime (Location, Year, Total, Homelessness_Overtime)
@@ -62,22 +54,14 @@ Select
 	CoC_Name as Location,
     Count_Year as Year,
     Overall_Homeless as Total,
-    Overall_Homeless - LAG(Overall_Homeless) OVER (Partition by CoC_Name order by Coc_Name, Count_Year) as Homelessness_Overtime
+    Overall_Homeless - LAG(Overall_Homeless) OVER (Partition by CoC_Name order by Count_Year) as Homelessness_Overtime
 From 
 	homelessness.homeless_data
 order by 1
 )
 -- Calculating effectiveness of Transitional Housing
-loss_or_Gain_of_Homeless 
-as
-(
 Select
 	Location,
-    Homelessness_Overtime
+    nth_value(Homelessness_Overtime, 3) OVER (Partition by Location order by Year Range Between Unbounded preceding and Unbounded Following) as Homeless_gained_or_loss
 From 
 	Overtime
-Where
-	Year = 2014
-)
-Select *
-From loss_or_Gain_of_Homeless
